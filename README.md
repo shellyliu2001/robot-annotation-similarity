@@ -13,7 +13,23 @@ The dataset consists of timestamped event annotations produced by human evaluato
 | `label`        | string      | Event label (e.g., `"pick_up_shirt"`, `"place_on_table"`).              |
 
 ## Method
+### Greedy Annotation Matching
+We use a simple greedy matching algorithm to match two annotations together to compute their similarity based on their timestamp overlap.
 
+With two lists of intervals:
+* Annotator A: $A_1, A_2, ... A_n$ where $A_i$ = [start_time, end_time]
+* Annotator B: $B_1, B_2, ... B_m$ where $B_i$ = [start_time, end_time]
+
+1. Sort A and B by start time
+2. Use two pointers to sweep through the two interval lists
+3. Match interval i with interval j if intervals overlap by more than a certain amount of times (normalized using IOU scores)
+
+### IoU Annotation Timestamp
+IOU(Intersection over Union) scores are used in the greedy matching algorithm and the similarity scores calculation. For two intervals $[start_i, end_i], [start_j, end_j]$,  the IOU score is defined as: $$len_i​=end_i−start_i,lenj_j=end_j−start_j$$ $$IOU = \frac{overlap}{len_i + len_j - overlap}$$
+
+### Sentence Embeddings
+
+### Similarity Score
 
 
 ## Examples
