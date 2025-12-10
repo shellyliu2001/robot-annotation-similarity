@@ -27,3 +27,4 @@ def generate_embeddings(sentences):
     embeddings = embed(sentences)
     
     return embeddings
+

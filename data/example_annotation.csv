@@ -1,0 +1,14 @@
+﻿run_id,annotator_id,start_time,end_time,label
+1,a,0,15,pick up shirt
+1,a,20,25,shake shirt
+1,a,30,35,put shirt down
+1,a,36,45,fold shirt in half
+1,b,2,10,right arm pick up shirt
+1,b,22,30,unfold shirt
+1,b,30,36,lay shirt flat on table
+1,b,36,37,hold up by collar
+1,b,37,45,fold halfway
+2,a,0,15,pick up box
+2,a,16,20,reorient box
+2,b,0,15,pick up box
+2,b,15,19,turn box around

@@ -25,7 +25,8 @@ With two lists of intervals:
 3. Match interval i with interval j if intervals overlap by more than a certain amount of times (normalized using IOU scores)
 
 ### IoU Annotation Timestamp
-IOU(Intersection over Union) scores are used in the greedy matching algorithm and the similarity scores calculation. For two intervals $[start_i, end_i], [start_j, end_j]$,  the IOU score is defined as: $$len_i​=end_i−start_i,lenj_j=end_j−start_j$$ $$IOU = \frac{overlap}{len_i + len_j - overlap}$$
+IOU(Intersection over Union) scores are used in the greedy matching algorithm and the similarity scores calculation. For two intervals $[start_i, end_i], [start_j, end_j]$,  the IOU score is defined as: $$len_i​=end_i−start_i,lenj_j=end_j−start_j$$
+$$IOU = \frac{overlap}{len_i + len_j - overlap}$$
 
 ### Sentence Embeddings
 
