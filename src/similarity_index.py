@@ -1,4 +1,3 @@
-# import necessary libraries
 import tensorflow_hub as hub
 from typing import List, Tuple
 import sys
@@ -21,7 +20,7 @@ def get_embedding_model():
     """
     global _model
     if _model is None:
-        _model = hub.load("https://www.kaggle.com/models/google/universal-sentence-encoder/tensorFlow2/universal-sentence-encoder/2?tfhub-redirect=true")
+        _model = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
     return _model
 
 
@@ -41,13 +40,6 @@ def generate_embeddings(label_a: str, label_b: str):
 def get_embedding_similarity(label_a: str, label_b: str) -> float:
     """
     Calculate the cosine similarity between two sentences using their embeddings.
-    
-    Args:
-        label_a: First sentence/label
-        label_b: Second sentence/label
-    
-    Returns:
-        Cosine similarity score between -1 and 1 (typically between 0 and 1 for normalized embeddings).
     """
     # Get embeddings for both labels
     embedding_a, embedding_b = generate_embeddings(label_a, label_b)
@@ -71,6 +63,21 @@ def get_embedding_similarity(label_a: str, label_b: str) -> float:
     return float(cosine_similarity)
 
 
+def interval_union(interval_a: Tuple[float, float], interval_b: Tuple[float, float]) -> float:
+    """
+    Calculate the union (length) of two time intervals.
+    """
+    a_start, a_end = interval_a
+    b_start, b_end = interval_b
+    
+    # Calculate union
+    union_start = min(a_start, b_start)
+    union_end = max(a_end, b_end)
+    union = union_end - union_start
+    
+    return union
+
+
 def iou(interval_a: Tuple[float, float], interval_b: Tuple[float, float]) -> float:
     """
     Calculate Intersection over Union (IOU) for two time intervals.
@@ -88,10 +95,8 @@ def iou(interval_a: Tuple[float, float], interval_b: Tuple[float, float]) -> flo
     
     intersection = intersection_end - intersection_start
     
-    # Calculate union
-    union_start = min(a_start, b_start)
-    union_end = max(a_end, b_end)
-    union = union_end - union_start
+    # Calculate union using interval_union function
+    union = interval_union(interval_a, interval_b)
     
     # Avoid division by zero
     if union == 0:
@@ -170,14 +175,7 @@ def match_annotations(annotations_a: List[Annotation], annotations_b: List[Annot
 def calculate_run_similarity_index(run: Run) -> float:
     """
     Calculate similarity index for a run by matching annotations between all annotator pairs,
-    computing similarity indices for each match, and taking a weighted average weighted by IOU.
-    
-    Args:
-        run: Run object containing annotations from multiple annotators
-    
-    Returns:
-        Weighted average similarity index for the run, between 0 and 1.
-        Returns 0.0 if there are no matches or fewer than 2 annotators.
+    computing similarity indices for each match, and taking a weighted average weighted by union of intervals.
     """
     annotators = run.get_annotators()
     run_id = run.get_run_id()
@@ -191,7 +189,7 @@ def calculate_run_similarity_index(run: Run) -> float:
         return 0.0
     
     all_similarity_indices = []
-    all_ious = []
+    all_unions = []
     
     # Match annotations between all pairs of annotators
     for i, annotator_a in enumerate(annotators):
@@ -206,36 +204,36 @@ def calculate_run_similarity_index(run: Run) -> float:
             
             print(f"    Found {len(matches)} match(es)")
             
-            # For each match, calculate similarity index and IOU
+            # For each match, calculate similarity index and union
             for ann_a, ann_b in matches:
                 # Calculate similarity index
                 sim_index = calculate_similarity_index(ann_a, ann_b)
                 
-                # Calculate IOU for weighting
+                # Calculate union for weighting
                 interval_a = ann_a.get_interval()
                 interval_b = ann_b.get_interval()
-                iou_score = iou(interval_a, interval_b)
+                union_length = interval_union(interval_a, interval_b)
                 
-                print(f"      Match: Sim Index={sim_index:.3f}, IOU={iou_score:.3f}, "
+                print(f"      Match: Sim Index={sim_index:.3f}, Union={union_length:.3f}, "
                       f"Labels: '{ann_a.get_label()}' <-> '{ann_b.get_label()}'")
                 
                 all_similarity_indices.append(sim_index)
-                all_ious.append(iou_score)
+                all_unions.append(union_length)
     
     # If no matches found, return 0.0
     if len(all_similarity_indices) == 0:
         print(f"  No matches found for Run {run_id}")
         return 0.0
     
-    # Calculate weighted average: sum(similarity_index * iou) / sum(iou)
-    total_weighted_sum = sum(sim * iou_val for sim, iou_val in zip(all_similarity_indices, all_ious))
-    total_iou_sum = sum(all_ious)
+    # Calculate weighted average: sum(similarity_index * union) / sum(union)
+    total_weighted_sum = sum(sim * union_val for sim, union_val in zip(all_similarity_indices, all_unions))
+    total_union_sum = sum(all_unions)
     
-    if total_iou_sum == 0:
-        print(f"  Total IOU sum is 0 for Run {run_id}")
+    if total_union_sum == 0:
+        print(f"  Total union sum is 0 for Run {run_id}")
         return 0.0
     
-    weighted_avg = total_weighted_sum / total_iou_sum
+    weighted_avg = total_weighted_sum / total_union_sum
     print(f"\n  Run {run_id} Similarity Index: {weighted_avg:.3f} "
           f"(weighted average of {len(all_similarity_indices)} matches)")
     
